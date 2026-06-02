@@ -37,7 +37,20 @@ globalThis.fetch = (url, options = {}) => fetch(url, { agent: globalAgent, ...op
 
 // === Axios Global Proxy Config ===
 axios.defaults.httpsAgent = globalAgent;
+axios.defaults.httpAgent = httpAgent;
 axios.defaults.proxy = false;
+
+// === INJECT: paksa SEMUA request axios lewat proxy ===
+// Baileys pakai axios instance yang sama (tidak ada nested axios), jadi
+// interceptor ini berlaku ke semua axios internal Baileys (upload media,
+// fetchLatestBaileysVersion, dll). Override httpsAgent walau request set
+// sendiri (mis. media upload set httpsAgent: fetchAgent yang undefined).
+axios.interceptors.request.use((config) => {
+    config.httpsAgent = globalAgent;
+    config.httpAgent = httpAgent;
+    config.proxy = false;
+    return config;
+});
 
 // === Export Agent for Baileys/Socket ===
 module.exports = {
