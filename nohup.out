@@ -1,0 +1,18 @@
+?? [ADMIN BOT] Memulai bot admin...
+(node:2753866) ExperimentalWarning: CommonJS module /opt/wa-bot-dynamic/bots/proxyConfig.js is loading ES Module /opt/wa-bot-dynamic/node_modules/node-fetch/src/index.js using require().
+Support for loading ES Module in require() is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+?? API berjalan di port 8007
+? ADMIN SIAP MENERIMA MESSAGE
+?? [ADMIN BOT] Menunggu koneksi ke WhatsApp...
+? [H1] Berhasil terhubung kembali ke WhatsApp!
+? [ADMIN BOT] Terhubung ke WhatsApp!
+?? [ADMIN BOT] Memulai bot admin...
+(node:2753937) ExperimentalWarning: CommonJS module /opt/wa-bot-dynamic/bots/proxyConfig.js is loading ES Module /opt/wa-bot-dynamic/node_modules/node-fetch/src/index.js using require().
+Support for loading ES Module in require() is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+?? API berjalan di port 8007
+? ADMIN SIAP MENERIMA MESSAGE
+?? [ADMIN BOT] Menunggu koneksi ke WhatsApp...
+? [H1] Berhasil terhubung kembali ke WhatsApp!
+? [ADMIN BOT] Terhubung ke WhatsApp!
