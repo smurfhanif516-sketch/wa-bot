@@ -55,14 +55,22 @@ async function createSock(botId, options = {}) {
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_FOLDER);
     console.log(`[DEBUG] State loaded`);
     
-    // Fetch latest Baileys version
-    let version;
+    // Fetch latest Baileys version. Di server, fetch ke github sering 407
+    // (proxy) dan fetchLatestBaileysVersion() *resolve* bawa versi bundle LAMA
+    // [2,3000,1023223821] + field `error` -> WA tolak 405. Jadi cuma pakai
+    // hasil fetch kalau beneran fresh (no error); selain itu fallback known-good.
+    let version = [2, 3000, 1035194821]; // known-good per 2026-06-03 (isLatest)
     try {
-        const { version: latestVersion, isLatest } = await fetchLatestBaileysVersion();
-        version = latestVersion;
-        console.log(`[DEBUG] Baileys version: ${JSON.stringify(version)}, isLatest: ${isLatest}`);
+        const res = await fetchLatestBaileysVersion();
+        if (res && res.version && !res.error) {
+            version = res.version;
+            console.log(`[DEBUG] Baileys version (fetched): ${JSON.stringify(version)}, isLatest: ${res.isLatest}`);
+        } else {
+            const code = res && res.error ? (res.error.status || res.error.message) : 'unknown';
+            console.log(`[DEBUG] Fetch versi gagal (${code}), pakai fallback ${JSON.stringify(version)}`);
+        }
     } catch (err) {
-        console.log(`[DEBUG] Gagal fetch version, using default`);
+        console.log(`[DEBUG] Fetch versi throw (${err.message}), pakai fallback ${JSON.stringify(version)}`);
     }
     
     const logger = pino({ level: 'silent' });
