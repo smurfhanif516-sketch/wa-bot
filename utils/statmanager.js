@@ -3,7 +3,8 @@ const path = require("path");
 
 const STATS_DIR = path.join(__dirname, "../stats");
 
-let currentHourStats = {};
+let currentHourStats = {};        // per nomor bot
+let currentHourGroupStats = {};   // per group id
 let currentHour = null;
 let currentDate = null;
 
@@ -25,85 +26,103 @@ function getDateParts() {
     };
 }
 
-// Get today file path
+// Get today file path (per nomor bot)
 function getTodayFile() {
     const { yyyy, mm, dd } = getDateParts();
     return path.join(STATS_DIR, "stats-" + yyyy + "-" + mm + "-" + dd + ".json");
 }
 
-// Create file if not exists
-function ensureTodayFile() {
-    const filePath = getTodayFile();
+// Get today file path (per group)
+function getTodayGroupFile() {
+    const { yyyy, mm, dd } = getDateParts();
+    return path.join(STATS_DIR, "group-stats-" + yyyy + "-" + mm + "-" + dd + ".json");
+}
 
+// Create file if not exists
+function ensureFile(filePath) {
     if (!fs.existsSync(filePath)) {
         fs.writeFileSync(filePath, JSON.stringify({}, null, 2));
     }
-
     return filePath;
 }
 
-// Increment counter
-function increment(botName) {
+// Reset buffer kalau tanggal/jam berubah
+function rollWindow() {
     const { yyyy, mm, dd, hour } = getDateParts();
     const today = yyyy + "-" + mm + "-" + dd;
 
-    // Kalau tanggal berubah → reset semuanya
+    // Tanggal berubah → reset semua
     if (currentDate !== today) {
         currentHourStats = {};
+        currentHourGroupStats = {};
         currentHour = hour;
         currentDate = today;
     }
 
-    // Kalau jam berubah → reset counter jam baru
+    // Jam berubah → reset counter jam baru
     if (currentHour !== hour) {
         currentHourStats = {};
+        currentHourGroupStats = {};
         currentHour = hour;
     }
+}
 
-    if (!currentHourStats[botName]) {
-        currentHourStats[botName] = 0;
-    }
-
+// Increment counter per nomor bot
+function increment(botName) {
+    rollWindow();
+    if (!currentHourStats[botName]) currentHourStats[botName] = 0;
     currentHourStats[botName]++;
 }
 
-// Flush ke file
-function flush() {
-    if (!currentHour || !currentDate) return;
+// Increment counter per group id
+function incrementGroup(groupId) {
+    if (!groupId) return;
+    rollWindow();
+    if (!currentHourGroupStats[groupId]) currentHourGroupStats[groupId] = 0;
+    currentHourGroupStats[groupId]++;
+}
 
-    ensureStatsDir();
-    const filePath = ensureTodayFile();
+// Merge buffer ke file (atomic). buffer = { key: count }
+function flushBuffer(filePath, buffer) {
+    if (Object.keys(buffer).length === 0) return;
+
+    ensureFile(filePath);
 
     let data = {};
-
     try {
-        const raw = fs.readFileSync(filePath);
-        data = JSON.parse(raw);
+        data = JSON.parse(fs.readFileSync(filePath));
     } catch (err) {
-        console.error("Stats file corrupted, recreating...");
+        console.error("Stats file corrupted, recreating: " + filePath);
         data = {};
     }
 
-    if (!data[currentHour]) {
-        data[currentHour] = {};
-    }
+    if (!data[currentHour]) data[currentHour] = {};
 
-    for (const bot in currentHourStats) {
-        if (!data[currentHour][bot]) {
-            data[currentHour][bot] = 0;
-        }
-        data[currentHour][bot] += currentHourStats[bot];
+    for (const key in buffer) {
+        if (!data[currentHour][key]) data[currentHour][key] = 0;
+        data[currentHour][key] += buffer[key];
     }
 
     const tempPath = filePath + ".tmp";
     fs.writeFileSync(tempPath, JSON.stringify(data, null, 2));
     fs.renameSync(tempPath, filePath);
+}
+
+// Flush ke file (bot + group)
+function flush() {
+    if (!currentHour || !currentDate) return;
+
+    ensureStatsDir();
+    flushBuffer(getTodayFile(), currentHourStats);
+    flushBuffer(getTodayGroupFile(), currentHourGroupStats);
 
     // Reset counter setelah flush
     currentHourStats = {};
+    currentHourGroupStats = {};
 }
 
 module.exports = {
     increment,
+    incrementGroup,
     flush
 };

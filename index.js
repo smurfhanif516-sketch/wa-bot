@@ -724,6 +724,10 @@ async function sendMessageWithRetry(botSock, targetNumber, message, caption, tra
 
             // logger('info', JSON.stringify(botHealth))
             stats.increment(botHealth.number);
+            // Track per group (cuma grup, @c.us diblok di atas)
+            if (targetNumber.endsWith('@g.us')) {
+                stats.incrementGroup(targetNumber);
+            }
             return {
                 number: targetNumber,
                 success: true,
