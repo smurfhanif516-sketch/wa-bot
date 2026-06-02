@@ -73,7 +73,8 @@ async function createSock(botId, options = {}) {
         console.log(`[DEBUG] Fetch versi throw (${err.message}), pakai fallback ${JSON.stringify(version)}`);
     }
     
-    const logger = pino({ level: 'silent' });
+    // Set WA_LOG_LEVEL=warn/debug/trace buat liat error internal Baileys (mis. upload media). Default silent.
+    const logger = pino({ level: process.env.WA_LOG_LEVEL || 'silent' });
 
     const socketOptions = {
         auth: {
