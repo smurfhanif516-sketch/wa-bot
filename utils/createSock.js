@@ -119,22 +119,14 @@ async function createSock(botId, options = {}) {
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_FOLDER);
     console.log(`[DEBUG] State loaded`);
     
-    // Fetch latest Baileys version. CATATAN: fetchLatestBaileysVersion() bisa
-    // *resolve* dgn versi bundle LAMA + field `error` kalau proxy tolak (407).
-    // Versi lama itu bikin WA reject 405. Jadi cuma pakai hasil fetch kalau
-    // beneran fresh (ada error => abaikan, pertahankan fallback known-good).
-    let version = [2, 3000, 1035194821]; // known-good per 2026-06-02
+    // Fetch latest Baileys version
+    let version;
     try {
-        const res = await fetchLatestBaileysVersion();
-        if (res && res.version && !res.error) {
-            version = res.version;
-            console.log(`[DEBUG] Baileys version (fetched): ${JSON.stringify(version)}, isLatest: ${res.isLatest}`);
-        } else {
-            const code = res && res.error ? (res.error.status || res.error.message) : 'unknown';
-            console.log(`[DEBUG] Fetch versi gagal (${code}), pakai fallback ${JSON.stringify(version)}`);
-        }
+        const { version: latestVersion, isLatest } = await fetchLatestBaileysVersion();
+        version = latestVersion;
+        console.log(`[DEBUG] Baileys version: ${JSON.stringify(version)}, isLatest: ${isLatest}`);
     } catch (err) {
-        console.log(`[DEBUG] Fetch versi throw (${err.message}), pakai fallback ${JSON.stringify(version)}`);
+        console.log(`[DEBUG] Gagal fetch version, using default`);
     }
     
     const logger = pino({ level: 'silent' });
