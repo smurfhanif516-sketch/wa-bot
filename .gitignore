@@ -1,7 +1,0 @@
-node_modules/
-*.log
-nohup.out
-
-# WhatsApp session credentials — JANGAN commit (sensitif)
-auth_sessions/
-session_admin/
