@@ -521,80 +521,6 @@ app.post('/send-message', async (req, res) => {
     });
 });
 
-// // Menangani satu nomor target
-// async function handleSingleTarget(rawNumber, message, caption, transactionId) {
-//     const sendStartTime = Date.now();
-
-
-//     const maxRetry = 10;
-//     const retryDelay = 100000; // 1 detik
-
-//     try {
-//         let targetNumber = rawNumber;
-
-//         if (!targetNumber.includes('@')) {
-//             targetNumber = await phoneNumberFormatter(targetNumber);
-//         }
-
-//         let botSock = null;
-//         let attempt = 0;
-
-//         // Retry jika bot tidak tersedia
-//         while (attempt <= maxRetry) {
-//             if (targetNumber.endsWith('@g.us')) {
-//                 logger('info', `[${transactionId}] Attempt ${attempt + 1}: Mencari bot aktif untuk grup: ${targetNumber}`);
-//                 botSock = getNextBotForGroup(targetNumber);
-//             } else if (targetNumber.endsWith('@c.us')) {
-//                 logger('Error', `[${transactionId}] Attempt ${attempt + 1}: Tidak Dapat mengirim ke personal number: ${targetNumber}`);
-//                 //BLOCK PERSONAL NUMBER
-//                 // botSock = getNextBotForIndividual(targetNumber);
-//                 return {
-//                     number: targetNumber,
-//                     success: false,
-//                     error: "Please don't send to personal number",
-//                     // retried: attempt,
-//                     // response_time_seconds: Number(elapsed.toFixed(3))
-//                 }
-//             }
-
-//             if (botSock && botSock.sendMessage) {
-//                 break; // bot ditemukan, lanjut kirim pesan
-//             }
-
-//             if (attempt < maxRetry) {
-//                 await new Promise(resolve => setTimeout(resolve, retryDelay)); // tunggu sebelum retry
-//             }
-
-//             attempt++;
-//         }
-
-//         if (!botSock || !botSock.sendMessage) {
-//             const errMsg = `Tidak ada bot aktif untuk kirim ke ${targetNumber} setelah ${attempt} percobaan`;
-//             logger('warn', `[${transactionId}] ${errMsg}`);
-//             return {
-//                 number: targetNumber,
-//                 success: false,
-//                 error: errMsg,
-//                 response_time_seconds: 0
-//             };
-//         }
-
-//         const result = await sendMessageWithRetry(botSock, targetNumber, message, caption, transactionId);
-//         return result;
-
-//     } catch (err) {
-//         const elapsed = (Date.now() - sendStartTime) / 1000;
-//         logger('error', `[${transactionId}] Gagal kirim ke ${rawNumber} dalam ${elapsed.toFixed(3)} detik: ${err.message}`);
-//         return {
-//             number: rawNumber,
-//             success: false,
-//             error: err.message,
-//             response_time_seconds: Number(elapsed.toFixed(3))
-//         };
-//     }
-// }
-
-
 async function handleSingleTarget(rawNumber, message, caption, transactionId) {
     const sendStartTime = Date.now();
 
@@ -1015,51 +941,6 @@ app.post('/send-media-from-url', upload.single('file'), async (req, res) => {
         res.status(500).json({ error: 'Gagal mendownload atau mengirim media.', transaction_id: transactionId });
     }
 });
-
-// app.get('/list-my-groups', async (req, res) => {
-//     const startTime = Date.now();
-//     const transactionId = generateTransactionId("GRP-FETCH");
-
-//     try {
-//         // Misalnya kamu pakai grup ID dummy untuk ambil sock
-//         const dummyGroupId = '120363419686014131@g.us';
-//         const sock = getNextBotForGroup(dummyGroupId); // atau get bot lain
-
-//         if (!sock) {
-//             logger('warn', `[${transactionId}] Tidak ada bot aktif untuk fetch group`);
-//             return res.status(400).json({
-//                 success: false,
-//                 transaction_id: transactionId,
-//                 error: 'Tidak ada bot aktif'
-//             });
-//         }
-
-//         const groups = Object.values(await sock.groupFetchAllParticipating());
-
-//         const responseTime = (Date.now() - startTime) / 1000;
-
-//         logger('info', `[${transactionId}] Berhasil ambil ${groups.length} grup`);
-
-//         return res.json({
-//             success: true,
-//             transaction_id: transactionId,
-//             group_count: groups.length,
-//             response_time_seconds: Number(responseTime.toFixed(3)),
-//             groups: groups.map(g => ({
-//                 id: g.id,
-//                 name: g.subject
-//             }))
-//         });
-
-//     } catch (err) {
-//         logger('error', `[${transactionId}] Gagal ambil grup: ${err.message}`);
-//         return res.status(500).json({
-//             success: false,
-//             transaction_id: transactionId,
-//             error: err.message
-//         });
-//     }
-// });
 
 function normalizeJid(jid) {
     return jid.replace(/:\d+@/, '@');
