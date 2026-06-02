@@ -1,5 +1,8 @@
 // proxyConfig.js
+const http = require('http');
+const https = require('https');
 const { HttpsProxyAgent } = require('https-proxy-agent');
+const { HttpProxyAgent } = require('http-proxy-agent');
 const axios = require('axios');
 const fetch = require('node-fetch');
 
@@ -19,8 +22,15 @@ const proxyUrl = `http://${proxyUser}:${proxyPass}@${PROXY_HOST}:${PROXY_PORT}`;
 //const proxyUrl = `http://${PROXY_HOST}:${PROXY_PORT}`;
 
 
-// === Global HTTPS Agent ===
-const globalAgent = new HttpsProxyAgent(proxyUrl);
+// === Global HTTPS/HTTP Agent ===
+const globalAgent = new HttpsProxyAgent(proxyUrl);   // utk target https (mis. mmg.whatsapp.net)
+const httpAgent = new HttpProxyAgent(proxyUrl);      // utk target http
+
+// === INJECT: paksa SEMUA request Node tanpa agent eksplisit lewat proxy ===
+// Ini bikin axios internal Baileys (upload media) + fetchLatestBaileysVersion
+// otomatis lewat proxy, tanpa perlu set fetchAgent di socket.
+http.globalAgent = httpAgent;
+https.globalAgent = globalAgent;
 
 // === Global Fetch Override ===
 globalThis.fetch = (url, options = {}) => fetch(url, { agent: globalAgent, ...options });
