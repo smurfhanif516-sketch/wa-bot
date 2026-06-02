@@ -8,6 +8,7 @@ const util = require('util')
 
 const { getOperationSock, getNextBotForGroup, reconnectBot, startOperationBotAPI, getBotStatusList, disconnectBotForce, reconnectSingleBotAPI, getNextBotForIndividual } = require('./bots/operationBot');
 const midleware = require('./utils/midleware');
+const { isTablePayload, renderTableDataUri } = require('./utils/jsonToTableImage');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
@@ -488,6 +489,20 @@ app.post('/send-message', async (req, res) => {
         return res.status(400).json({ error: 'Parameter number dan message diperlukan!' });
     }
 
+    // ===== JSON TABLE -> IMAGE =====
+    // Kalau message berupa objek table { title?, headers, rows },
+    // render jadi PNG dan ubah ke data URI base64 supaya pipeline
+    // sendMessage() existing langsung kirim sebagai gambar.
+    if (isTablePayload(message)) {
+        try {
+            message = renderTableDataUri(message);
+            logger('info', `[${transactionId}] JSON table dirender jadi image (${message.length} chars base64)`);
+        } catch (err) {
+            logger('error', `[${transactionId}] Gagal render JSON table jadi image: ${err.message}`);
+            return res.status(400).json({ error: `Gagal render table: ${err.message}` });
+        }
+    }
+
     if (!Array.isArray(number)) number = [number];
     number = [...new Set(number)];
 
@@ -509,7 +524,11 @@ app.post('/send-message', async (req, res) => {
     logger('info', `[${transactionId}] Selesai kirim semua pesan dalam ${elapsedSeconds.toFixed(3)} detik`);
 
     const success_parameter = results[0]?.success;
-    logger('message', `[${transactionId}] | Success : ${success_parameter} | Target : ${results[0].number} | Message : ${message} | \n\n `)
+    // Jangan dump base64 panjang (image/table) ke log.
+    const messageForLog = typeof message === 'string' && message.startsWith('data:')
+        ? `[${message.slice(5, message.indexOf(';'))} base64, ${message.length} chars]`
+        : message;
+    logger('message', `[${transactionId}] | Success : ${success_parameter} | Target : ${results[0].number} | Message : ${messageForLog} | \n\n `)
 
     res.json({
         success: success_parameter,
