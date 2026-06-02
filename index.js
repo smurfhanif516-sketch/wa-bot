@@ -495,7 +495,7 @@ app.post('/send-message', async (req, res) => {
     // sendMessage() existing langsung kirim sebagai gambar.
     if (isTablePayload(message)) {
         try {
-            message = renderTableDataUri(message);
+            message = await renderTableDataUri(message);
             logger('info', `[${transactionId}] JSON table dirender jadi image (${message.length} chars base64)`);
         } catch (err) {
             logger('error', `[${transactionId}] Gagal render JSON table jadi image: ${err.message}`);
