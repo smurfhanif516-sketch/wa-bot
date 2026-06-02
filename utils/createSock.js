@@ -157,8 +157,9 @@ async function createSock(botId, options = {}) {
     }
 
     if (globalAgent) {
-        console.log(`[DEBUG] Menggunakan proxy agent`);
-        socketOptions.agent = globalAgent;
+        console.log(`[DEBUG] Menggunakan proxy agent (ws + media)`);
+        socketOptions.agent = globalAgent;       // WebSocket (login, teks)
+        socketOptions.fetchAgent = globalAgent;  // upload/download media (HTTP) -> WAJIB biar media lewat proxy
     } else {
         console.log(`[DEBUG] TIDAK menggunakan proxy`);
     }
