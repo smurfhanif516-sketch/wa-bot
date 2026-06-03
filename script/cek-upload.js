@@ -1,38 +1,38 @@
 // script/cek-upload.js
-// Tes apakah POST (stream vs buffer) ke host upload media WA tembus lewat proxy.
-// Tujuan: bedain "stream chunked di-tutup proxy" vs "host ga reachable".
-// Jalanin: node script/cek-upload.js
+// Konfirmasi: proxy izinin GET tapi blok POST ke host media WA?
+// GET vs POST ke host yang SAMA. Jalanin: node script/cek-upload.js
 const path = require('path');
-const { Readable } = require('stream');
 const { globalAgent } = require(path.join(__dirname, '../bots/proxyConfig'));
 const axios = require('axios');
 
-const HOST = 'media-cgk1-1.cdn.whatsapp.net'; // salah satu host upload nyata
-const URL = 'https://' + HOST + '/mms/image/test?auth=test&token=test';
-const payload = Buffer.alloc(2048, 1); // 2KB dummy
+const HOST = 'media-cgk1-1.cdn.whatsapp.net';
+const payload = Buffer.alloc(2048, 1);
 
-async function tryPost(label, body) {
+async function req(label, method, body) {
     try {
-        const r = await axios.post(URL, body, {
+        const r = await axios({
+            method,
+            url: 'https://' + HOST + '/',
+            data: body,
             httpsAgent: globalAgent,
             proxy: false,
             timeout: 20000,
             maxRedirects: 0,
-            headers: { 'Content-Type': 'application/octet-stream' },
+            responseType: 'text',
+            transitional: { silentJSONParsing: true, forcedJSONParsing: false },
+            headers: body ? { 'Content-Type': 'application/octet-stream' } : {},
             validateStatus: () => true,
             maxBodyLength: Infinity,
             maxContentLength: Infinity,
         });
-        console.log(label, '-> RESPON status', r.status); // dapet status = koneksi utuh
+        console.log(label, '-> RESPON status', r.status);
     } catch (e) {
-        console.log(label, '-> ERR', e.code || e.message); // abort/aborted = koneksi diputus
+        console.log(label, '-> ERR', e.code || e.message);
     }
 }
 
 (async () => {
     console.log('target:', HOST);
-    // BUFFER body -> axios set Content-Length (bukan chunked)
-    await tryPost('1. buffer (Content-Length)', payload);
-    // STREAM body -> axios chunked transfer-encoding (kaya baileys)
-    await tryPost('2. stream (chunked)', Readable.from(payload));
+    await req('1. GET ', 'get', undefined);
+    await req('2. POST', 'post', payload);
 })();
