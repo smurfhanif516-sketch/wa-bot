@@ -489,18 +489,28 @@ app.post('/send-message', async (req, res) => {
         return res.status(400).json({ error: 'Parameter number dan message diperlukan!' });
     }
 
-    // Kalau message dikirim sebagai STRING JSON (form/body bukan application/json,
-    // JSON.stringify, atau JSON di dalam ""), parse berulang sampai jadi object.
+    // Kalau message dikirim sebagai STRING JSON (form-urlencoded, JSON.stringify,
+    // JSON di dalam "", bahkan yg malformed: dibungkus quote + trailing comma),
+    // normalisasi & parse berulang sampai jadi object table.
     if (typeof message === 'string') {
         let candidate = message;
-        for (let i = 0; i < 4 && typeof candidate === 'string'; i++) {
-            const t = candidate.trim();
-            if (!(t.startsWith('{') || t.startsWith('[') || t.startsWith('"'))) break;
-            try {
-                candidate = JSON.parse(t);
-            } catch (_) {
-                break; // bukan JSON valid, biarkan sebagai teks biasa
+        for (let i = 0; i < 5 && typeof candidate === 'string'; i++) {
+            const t = candidate.trim().replace(/,+\s*$/, ''); // buang trailing comma
+            if (t.startsWith('{') || t.startsWith('[')) {
+                try { candidate = JSON.parse(t); continue; } catch (_) { break; }
             }
+            if (t.startsWith('"')) {
+                try { candidate = JSON.parse(t); continue; }      // stringify ganda
+                catch (_) {
+                    // input malformed: quote luar berlebih + inner quotes ga di-escape
+                    if (t.endsWith('"')) {
+                        const inner = t.slice(1, -1).trim();
+                        if (inner.startsWith('{') || inner.startsWith('[')) { candidate = inner; continue; }
+                    }
+                    break;
+                }
+            }
+            break;
         }
         if (isTablePayload(candidate)) message = candidate;
     }
