@@ -94,8 +94,13 @@ async function createSock(botId, options = {}) {
     }
 
     if (globalAgent) {
-        console.log(`[DEBUG] Menggunakan proxy agent`);
-        socketOptions.agent = globalAgent;
+        console.log(`[DEBUG] Menggunakan proxy agent (ws + media)`);
+        socketOptions.agent = globalAgent;       // WebSocket: login, kirim teks
+        // Baileys = ESM, axios-nya beda instance dari proxyConfig (CJS) -> setting
+        // axios di proxyConfig ga nyampe. fetchAgent dibaca LANGSUNG baileys
+        // (messages-media.js: httpsAgent: fetchAgent) -> ini cara upload media
+        // lewat proxy. Cuma dipakai di upload, ga ganggu handshake/QR.
+        socketOptions.fetchAgent = globalAgent;
     } else {
         console.log(`[DEBUG] TIDAK menggunakan proxy`);
     }
