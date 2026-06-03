@@ -489,16 +489,20 @@ app.post('/send-message', async (req, res) => {
         return res.status(400).json({ error: 'Parameter number dan message diperlukan!' });
     }
 
-    // Kalau message dikirim sebagai STRING JSON (mis. dari form/body bukan
-    // application/json), parse dulu supaya bisa dideteksi sebagai table.
+    // Kalau message dikirim sebagai STRING JSON (form/body bukan application/json,
+    // JSON.stringify, atau JSON di dalam ""), parse berulang sampai jadi object.
     if (typeof message === 'string') {
-        const trimmed = message.trim();
-        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        let candidate = message;
+        for (let i = 0; i < 4 && typeof candidate === 'string'; i++) {
+            const t = candidate.trim();
+            if (!(t.startsWith('{') || t.startsWith('[') || t.startsWith('"'))) break;
             try {
-                const parsed = JSON.parse(trimmed);
-                if (isTablePayload(parsed)) message = parsed;
-            } catch (_) { /* bukan JSON valid, biarkan sebagai teks biasa */ }
+                candidate = JSON.parse(t);
+            } catch (_) {
+                break; // bukan JSON valid, biarkan sebagai teks biasa
+            }
         }
+        if (isTablePayload(candidate)) message = candidate;
     }
 
     // JSON table -> image: kalau message objek { title?, headers, rows },
