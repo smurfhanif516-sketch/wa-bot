@@ -489,6 +489,18 @@ app.post('/send-message', async (req, res) => {
         return res.status(400).json({ error: 'Parameter number dan message diperlukan!' });
     }
 
+    // Kalau message dikirim sebagai STRING JSON (mis. dari form/body bukan
+    // application/json), parse dulu supaya bisa dideteksi sebagai table.
+    if (typeof message === 'string') {
+        const trimmed = message.trim();
+        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (isTablePayload(parsed)) message = parsed;
+            } catch (_) { /* bukan JSON valid, biarkan sebagai teks biasa */ }
+        }
+    }
+
     // JSON table -> image: kalau message objek { title?, headers, rows },
     // render PNG lalu jadiin data URI base64 supaya pipeline sendMessage()
     // existing langsung kirim sebagai gambar.
